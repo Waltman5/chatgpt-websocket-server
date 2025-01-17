@@ -2,14 +2,14 @@ import asyncio
 import json
 import os
 import requests
+import re
 from time import sleep
 from websockets import serve, exceptions
-import re  # Import regex for response cleanup
 
 # Get Hugging Face API key
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
-# Hugging Face API URL (Using a Smarter Model)
+# Hugging Face API URL (Using Falcon 7B-Instruct)
 API_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
 
 # Set headers
@@ -24,7 +24,7 @@ async def process_message(websocket, path):
             conversation = json.loads(data)  # Parse JSON input
             user_message = conversation[-1]["content"].strip()  # Extract and clean user message
 
-            # Dynamically adjust response length based on input length
+            # Define max_tokens dynamically
             input_length = len(user_message.split())  # Count words
             if input_length <= 3:  
                 max_tokens = 30  # Short response for greetings
@@ -33,8 +33,18 @@ async def process_message(websocket, path):
             else:
                 max_tokens = 250  # Detailed response for complex queries
 
-            # **Improve prompt structure for better conversation**
-            formatted_prompt = f"<|system|>You are a crypto expert AI. Answer factually and concisely.\n<|user|>{user_message}\n<|assistant|>"
+            # **Revised Prompt to Fix AI's Output**
+            formatted_prompt = f"""
+### Instruction:
+You are an expert in cryptocurrency. Answer the user's question clearly and concisely. 
+Do NOT repeat the question or introduce yourself. 
+Give only the answer.
+
+### User:
+{user_message}
+
+### AI:
+"""
 
             payload = {
                 "inputs": formatted_prompt,  
@@ -69,12 +79,14 @@ async def process_message(websocket, path):
             if response.status_code == 200:
                 reply_data = response.json()
 
-                # Ensure the response format is correct
+                # Ensure response format is correct
                 if isinstance(reply_data, list) and "generated_text" in reply_data[0]:
                     raw_reply = reply_data[0]["generated_text"]
                     
-                    # **CLEAN AI RESPONSE: Remove prompt artifacts like <|assistant|> and <|user|>**
-                    reply = re.sub(r"<\|.*?\|>", "", raw_reply).strip()
+                    # **CLEAN AI RESPONSE: Remove unwanted AI self-introductions**
+                    reply = re.sub(r"^.*?AI: ", "", raw_reply).strip()
+                    reply = re.sub(r"### Instruction:.*", "", reply, flags=re.DOTALL).strip()
+                    reply = re.sub(r"### User:.*", "", reply, flags=re.DOTALL).strip()
 
                 else:
                     reply = "⚠️ Unexpected response format."

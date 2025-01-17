@@ -1,38 +1,35 @@
 import asyncio
 import json
-import random
-
-import openai
+import os
+import requests
 from websockets import serve
 
-with open("pool.txt", "r") as f:
-    txt = f.read()
-secrets = [l for l in txt.split("\n") if l]
+# Get Hugging Face API key from environment variables
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
+# Define the Hugging Face API endpoint
+API_URL = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
 
-async def echo(websocket):
+# Set headers for Hugging Face API requests
+HEADERS = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
+
+async def process_message(websocket):
     async for data in websocket:
         conversation = [{"role": msg[0], "content": msg[1]} for msg in json.loads(data)]
-        openai.api_key = random.choice(secrets)
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=conversation,
-            stream=True,
-        )
-        for chunk in response:
-            if "choices" in chunk:
-                choice = chunk.choices[0]
-                if choice.finish_reason == "stop":
-                    return
-                elif "content" in choice.delta:
-                    piece = choice.delta.content
-                    await websocket.send(piece)
 
+        # Send request to Hugging Face API
+        response = requests.post(API_URL, headers=HEADERS, json={"inputs": conversation[-1]["content"]})
+        
+        if response.status_code == 200:
+            reply = response.json().get("generated_text", "Sorry, I couldn't understand that.")
+        else:
+            reply = "Error communicating with Hugging Face API."
+
+        await websocket.send(reply)
 
 async def main():
-    async with serve(echo, "0.0.0.0", 9000):
-        await asyncio.Future()
-
+    async with serve(process_message, "0.0.0.0", 9000):
+        await asyncio.Future()  # Keep the server running
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -4,6 +4,7 @@ import os
 import requests
 from time import sleep
 from websockets import serve, exceptions
+import re  # Import regex for response cleanup
 
 # Get Hugging Face API key
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
@@ -72,11 +73,8 @@ async def process_message(websocket, path):
                 if isinstance(reply_data, list) and "generated_text" in reply_data[0]:
                     raw_reply = reply_data[0]["generated_text"]
                     
-                    # **Remove unnecessary assistant text**
-                    if "<|assistant|>" in raw_reply:
-                        reply = raw_reply.split("<|assistant|>")[-1].strip()
-                    else:
-                        reply = raw_reply.strip()  
+                    # **CLEAN AI RESPONSE: Remove prompt artifacts like <|assistant|> and <|user|>**
+                    reply = re.sub(r"<\|.*?\|>", "", raw_reply).strip()
 
                 else:
                     reply = "⚠️ Unexpected response format."

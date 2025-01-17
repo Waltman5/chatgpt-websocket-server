@@ -34,19 +34,22 @@ async def process_message(websocket, path):
             else:
                 max_tokens = 250  # Long, detailed response for complex queries
 
-            # Prepare API request payload
+            # Improve prompt structure for better conversation
+            formatted_prompt = f"System: You are a knowledgeable crypto expert. Answer user questions briefly and clearly.\nUser: {user_message}\nAI:"
+
             payload = {
-                "inputs": user_message,
+                "inputs": formatted_prompt,  # Provide structured input to AI
                 "parameters": {
                     "max_new_tokens": max_tokens,
-                    "temperature": 0.3,  # Lower value = more factual
-                    "top_p": 0.8,  # Controls variation in response
-                    "repetition_penalty": 1.2  # Prevents repeated answers
+                    "temperature": 0.3,  # Keep responses factual
+                    "top_p": 0.8,
+                    "repetition_penalty": 1.2
                 }
             }
 
             # Make request to Hugging Face
             response = requests.post(API_URL, headers=HEADERS, json=payload)
+
 
             # Handle 503 error (model is loading)
             if response.status_code == 503:

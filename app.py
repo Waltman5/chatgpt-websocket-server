@@ -21,24 +21,25 @@ HEADERS = {
 async def process_message(websocket, path):
     async for data in websocket:
         try:
-            conversation = json.loads(data)  # Parse JSON input
-            user_message = conversation[-1]["content"].strip()  # Extract and clean user message
+            conversation = json.loads(data)
+            user_message = conversation[-1]["content"].strip()
 
             # Define max_tokens dynamically
-            input_length = len(user_message.split())  # Count words
-            if input_length <= 3:  
-                max_tokens = 30  # Short response for greetings
-            elif input_length <= 10:  
-                max_tokens = 100  # Medium response for normal questions
+            input_length = len(user_message.split())
+            if input_length <= 3:
+                max_tokens = 30
+            elif input_length <= 10:
+                max_tokens = 100
             else:
-                max_tokens = 250  # Detailed response for complex queries
+                max_tokens = 250
 
-            # **Revised Prompt to Fix AI's Output**
+            # **Better Prompt Formatting**
             formatted_prompt = f"""
 ### Instruction:
-You are an expert in cryptocurrency. Answer the user's question clearly and concisely. 
-Do NOT repeat the question or introduce yourself. 
-Give only the answer.
+You are a cryptocurrency expert. Answer clearly and concisely.
+Do NOT repeat the user’s input.
+Do NOT introduce yourself.
+Only provide the answer.
 
 ### User:
 {user_message}
@@ -47,25 +48,24 @@ Give only the answer.
 """
 
             payload = {
-                "inputs": formatted_prompt,  
+                "inputs": formatted_prompt,
                 "parameters": {
                     "max_new_tokens": max_tokens,
-                    "temperature": 0.3,  
+                    "temperature": 0.3,
                     "top_p": 0.8,
-                    "repetition_penalty": 1.2  
+                    "repetition_penalty": 1.2
                 }
             }
 
-            # Make request to Hugging Face
+            # **Make request to Hugging Face**
             response = requests.post(API_URL, headers=HEADERS, json=payload)
 
-            # **Handle 503 error (model loading)**
+            # **Handle 503 error (Model Loading)**
             if response.status_code == 503:
                 error_data = response.json()
                 estimated_time = error_data.get("estimated_time", 30)
                 print(f"⚠️ Model is loading, retrying in {estimated_time} seconds...")
 
-                # Notify user and wait before retrying
                 try:
                     await websocket.send(f"⏳ Model is loading, please wait {int(estimated_time)} seconds...")
                 except exceptions.ConnectionClosedOK:
@@ -78,15 +78,18 @@ Give only the answer.
             # **Check API response**
             if response.status_code == 200:
                 reply_data = response.json()
+                print("📝 RAW RESPONSE:", reply_data)  # DEBUG LOGGING
 
-                # Ensure response format is correct
                 if isinstance(reply_data, list) and "generated_text" in reply_data[0]:
                     raw_reply = reply_data[0]["generated_text"]
-                    
-                    # **CLEAN AI RESPONSE: Remove unwanted AI self-introductions**
+
+                    # **CLEAN AI RESPONSE**
                     reply = re.sub(r"^.*?AI: ", "", raw_reply).strip()
                     reply = re.sub(r"### Instruction:.*", "", reply, flags=re.DOTALL).strip()
                     reply = re.sub(r"### User:.*", "", reply, flags=re.DOTALL).strip()
+
+                    if not reply:  # **Handle Empty Response**
+                        reply = "⚠️ Sorry, I couldn't generate a response."
 
                 else:
                     reply = "⚠️ Unexpected response format."
@@ -95,7 +98,9 @@ Give only the answer.
                 print(f"❌ API Error: {response.status_code} - {response.text}")
                 reply = f"Error {response.status_code}: {response.text}"
 
-            # **Send response to client (handle disconnections)**
+            print("📢 FINAL RESPONSE:", reply)  # DEBUG LOGGING
+
+            # **Send Response to Client**
             try:
                 await websocket.send(reply)
             except exceptions.ConnectionClosedOK:

@@ -9,7 +9,7 @@ from websockets import serve, exceptions
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 # Hugging Face API URL (Using a Smarter Model)
-API_URL = "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-chat"
+API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
 
 
 # Set headers

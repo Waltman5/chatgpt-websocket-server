@@ -8,8 +8,8 @@ from websockets import serve, exceptions
 # Get Hugging Face API key
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
-# Hugging Face API URL
-API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta"
+# Hugging Face API URL (Using a Smarter Model)
+API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct"
 
 # Set headers
 HEADERS = {
@@ -22,14 +22,24 @@ async def process_message(websocket, path):
         try:
             conversation = json.loads(data)  # Parse JSON input
             user_message = conversation[-1]["content"]  # Extract last user message
-            
-            # Prepare API request
+
+            # Dynamically adjust response length based on input length
+            input_length = len(user_message.split())  # Count words
+            if input_length <= 3:  # If input is very short (e.g., "Hallo")
+                max_tokens = 30  # Short response
+            elif input_length <= 10:  # Normal question (e.g., "Tell me about Bitcoin")
+                max_tokens = 100  # Medium response
+            else:
+                max_tokens = 250  # Long, detailed response for complex queries
+
+            # Prepare API request payload
             payload = {
                 "inputs": user_message,
                 "parameters": {
-                    "max_length": 200,
-                    "temperature": 0.7,
-                    "top_p": 0.9
+                    "max_new_tokens": max_tokens,
+                    "temperature": 0.3,  # Lower value = more factual
+                    "top_p": 0.8,  # Controls variation in response
+                    "repetition_penalty": 1.2  # Prevents repeated answers
                 }
             }
 

@@ -1,5 +1,1 @@
-notdiamond
-litellm
-httpx
-python-dotenv
-websockets~=10.4
+notdiamond[create]

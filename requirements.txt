@@ -1,6 +1,5 @@
-httpx
-litellm
 notdiamond
-openai~=0.27.2
+litellm
+httpx
 python-dotenv
 websockets~=10.4

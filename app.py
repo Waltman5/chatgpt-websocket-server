@@ -32,7 +32,7 @@ async def process_message(websocket, path):
             result, usage_info, provider = client.chat.completions.create(
                 messages=[{"role": "user", "content": user_message}],
                 model=[
-                    "perplexity/llama-3.1-sonar-large-128k-online",
+                
                     "cohere/command-r-plus"
                 ],
                 exclude_providers=["openai"],  # ✅ Explicitly exclude OpenAI

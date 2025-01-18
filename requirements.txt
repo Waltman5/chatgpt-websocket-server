@@ -1,2 +1,3 @@
+notdiamond
+openai~=0.27.2python-dotenv
 websockets~=10.4
-openai~=0.27.2

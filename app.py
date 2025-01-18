@@ -33,7 +33,7 @@ async def process_message(websocket, path):
             conversation = json.loads(data)
             user_message = conversation[-1]["content"].strip()
 
-            # ✅ 6) Create a chat completion via NotDiamond
+            # ✅ 6) Create a chat completion via NotDiamond (EXCLUDING OpenAI)
             result, usage_info, provider = client.chat.completions.create(
                 messages=[{"role": "user", "content": user_message}],
                 model=[
@@ -62,6 +62,7 @@ async def process_message(websocket, path):
             except exceptions.ConnectionClosedOK:
                 print("Client disconnected before receiving error message.")
             return
+
 
 
 

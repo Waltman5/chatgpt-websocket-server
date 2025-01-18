@@ -41,8 +41,28 @@ async def process_message(websocket, path):
                     "mistral/mistral-7b-instruct",                   # ✅ Free
                     "cohere/command-r-plus"                          # ✅ Free
                 ],
+                exclude_providers=["openai"],  # ❌ Force NotDiamond to avoid OpenAI
                 tradeoff='cost'  # Uses the best free model based on cost vs. performance
             )
+
+            # ✅ 7) Debug logs
+            print("LLM called:", provider.model)  # Log model used
+            reply = result.content
+            if not reply:
+                reply = "⚠️ Sorry, I couldn't generate a response."
+            print("LLM output:", reply)
+
+            # ✅ 8) Send the response back to the client
+            await websocket.send(reply)
+
+        except Exception as e:
+            print(f"⚠️ Error in process_message: {e}")
+            try:
+                await websocket.send(f"⚠️ Error: {e}")
+            except exceptions.ConnectionClosedOK:
+                print("Client disconnected before receiving error message.")
+            return
+
 
 
             # ✅ 7) Debug logs

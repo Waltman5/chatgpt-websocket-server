@@ -62,10 +62,12 @@ async def process_message(websocket, path):
             return
 
 async def main():
-    print("✅ WebSocket server is running on ws://0.0.0.0:9000 ...")
-    # ✅ 9) Start the WebSocket server on port 9000
-    async with serve(process_message, "0.0.0.0", 9000):
+    PORT = int(os.getenv("PORT", 9000))  # Use Render's assigned PORT
+    print(f"✅ WebSocket server is running on ws://0.0.0.0:{PORT} ...")
+    
+    async with serve(process_message, "0.0.0.0", PORT):
         await asyncio.Future()  # Run forever
+
 
 if __name__ == "__main__":
     asyncio.run(main())

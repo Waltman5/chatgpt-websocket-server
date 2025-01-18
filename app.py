@@ -9,10 +9,10 @@ from notdiamond import NotDiamond
 load_dotenv()
 
 # Retrieve your NotDiamond API key from the environment
-NOTDIAMOND_API_KEY = os.getenv("NOTDIAMOND_API_KEY")
+NOTDIAMOND_API_KEY = os.getenv("onboarding")
 
 if not NOTDIAMOND_API_KEY:
-    print("⚠️  WARNING: The environment variable 'NOTDIAMOND_API_KEY' is not set.")
+    print("⚠️  WARNING: The environment variable 'onboarding' is not set.")
     print("    Please check your .env file or set the variable manually.")
     import sys
     sys.exit(1)
@@ -20,7 +20,7 @@ else:
     print("✅ Found NotDiamond API key in 'NOTDIAMOND_API_KEY' environment variable.")
 
 # Initialize the NotDiamond client with your key
-client = NotDiamond(api_key=NOTDIAMOND_API_KEY)
+client = NotDiamond(api_key=onboarding)
 
 async def process_message(websocket, path):
     async for data in websocket:

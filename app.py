@@ -34,14 +34,16 @@ async def process_message(websocket, path):
             user_message = conversation[-1]["content"].strip()
 
             # ✅ 6) Create a chat completion via NotDiamond
-            result, usage_info, provider = client.chat.completions.create(
-                messages=[{"role": "user", "content": user_message}],
-                model=[
-                    "openai/gpt-4o-mini",
-                    "perplexity/llama-3.1-sonar-large-128k-online"
-                ],
-                tradeoff='cost'  # Uses best model based on cost vs. performance
-            )
+           result, usage_info, provider = client.chat.completions.create(
+    messages=[{"role": "user", "content": user_message}],
+    model=[
+        "perplexity/llama-3.1-sonar-large-128k-online",  # ✅ Free
+        "mistral/mistral-7b-instruct",                   # ✅ Free
+        "cohere/command-r-plus"                          # ✅ Free
+    ],
+    tradeoff='cost'  # Uses best free model based on cost vs. performance
+)
+
 
             # ✅ 7) Debug logs
             print("LLM called:", provider.model)  # Log model used
